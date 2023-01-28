@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { container, motionItem } from "./framer-styles";
 
 interface IItem {
@@ -12,10 +12,10 @@ interface IItem {
 
 export const Results = React.memo(() => {
   const router = useRouter();
-  const [results, setResults] = useState<IItem[]>([]);
+  const [results, setResults] = useState<IItem[] | undefined>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async () => {
     const apiURL = "https://api.datamuse.com";
     const urlWord = (router.query["value"] as string).replaceAll(" ", "+");
 
@@ -23,7 +23,7 @@ export const Results = React.memo(() => {
       const res = await fetch(`${apiURL}/words?ml=${urlWord}&max=50`);
 
       if (res.ok) {
-        const json: IItem[] = await res.json();
+        const json: IItem[] | undefined = await res.json();
         setResults(json);
         setLoading(false);
       } else {
@@ -34,7 +34,7 @@ export const Results = React.memo(() => {
         console.error(error.message);
       }
     }
-  };
+  }, [router]);
 
   useEffect(() => {
     if (router.isReady && router.query["value"] && typeof router.query["value"] === "string") {
@@ -45,7 +45,7 @@ export const Results = React.memo(() => {
       setResults([]);
       setLoading(true);
     };
-  }, [router]);
+  }, [router, fetchResults]);
 
   if (loading && router.query["value"]) {
     return (
@@ -65,7 +65,7 @@ export const Results = React.memo(() => {
     );
   }
 
-  if (!loading && results.length === 0) {
+  if ((!loading && results?.length === 0) || (!loading && !results)) {
     return <p className='text-xl font-semibold'>No results!</p>;
   }
 
@@ -76,7 +76,7 @@ export const Results = React.memo(() => {
       initial='hidden'
       animate='show'
     >
-      {results.map((item, index) => {
+      {results?.map((item, index) => {
         return (
           <motion.div
             key={index}
