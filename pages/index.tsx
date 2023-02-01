@@ -1,4 +1,3 @@
-import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -24,7 +23,7 @@ export default function Home() {
               className='bg-zinc-800'
               priority
             />
-            <p className='inline-block px-4 py-2 text-2xl font-semibold'>Word Challenge</p>
+            <p className='inline-block px-4 py-2 mt-auto text-2xl font-semibold'>Word Challenge</p>
             <Link href={{ pathname: "/word-challenge" }} className='px-4 text-xl font-semibold dark:text-white'>
               View
             </Link>
@@ -39,7 +38,7 @@ export default function Home() {
               className='bg-zinc-800'
               priority
             />
-            <p className='inline-block px-4 py-2 text-2xl font-semibold'>File Browser Challenge</p>
+            <p className='inline-block px-4 py-2 mt-auto text-2xl font-semibold'>File Browser Challenge</p>
             <Link href={{ pathname: "/file-expand-challenge" }} className='px-4 text-xl font-semibold dark:text-white'>
               View
             </Link>

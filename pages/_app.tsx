@@ -3,8 +3,26 @@ import { Navbar } from "@/components/navbar";
 import type { AppProps } from "next/app";
 import Head from "next/head";
 import { ThemeProvider } from "next-themes";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { Sidebar } from "@/components/chirp/sidebar";
 
 export default function App({ Component, pageProps }: AppProps) {
+  const router = useRouter();
+  const [isChirp, setIsChirp] = useState(false);
+
+  useEffect(() => {
+    if (router.pathname.includes("/chirp")) {
+      setIsChirp(true);
+    } else {
+      setIsChirp(false);
+    }
+
+    return () => {
+      setIsChirp(false);
+    };
+  }, [router.pathname]);
+
   return (
     <>
       <Head>
@@ -15,7 +33,14 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
       <ThemeProvider enableSystem={true} attribute='class'>
         <Navbar />
-        <Component {...pageProps} />
+        {!isChirp ? (
+          <Component {...pageProps} />
+        ) : (
+          <div className='grid grid-cols-[250px_1fr] h-[calc(100vh_-_56px)] '>
+            <Sidebar />
+            <Component {...pageProps} />
+          </div>
+        )}
       </ThemeProvider>
     </>
   );
