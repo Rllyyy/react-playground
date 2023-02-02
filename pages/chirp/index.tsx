@@ -1,25 +1,23 @@
+import { CreatePost } from "@/components/chirp/createPost";
+import { LoadingIcon } from "@/components/chirp/loadingIcon";
+import { IPost, Post } from "@/components/chirp/post";
 import Head from "next/head";
 import React, { useCallback, useEffect, useState } from "react";
+import Modal from "react-modal";
 import TextareaAutosize from "react-textarea-autosize";
 
-interface IPost {
-  _id: string;
-  postedAt: Date;
-  body: string;
-  likes: Array<string>;
-  user: {
-    id: string;
-    name: string;
-    nickname: string;
-    picture: string;
-  };
-}
+type OpenModalItem = {
+  _id: string | null;
+  body: string | null;
+};
 
 export default function ChirpHome() {
   const [posts, setPosts] = useState<IPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalIsOpen, setModalIsOpen] = useState<OpenModalItem | null>(null);
 
   const fetchData = useCallback(async () => {
+    setLoading(true);
     const res = await fetch("/api/chirp");
     const json = await res.json();
     setPosts(json);
@@ -36,9 +34,19 @@ export default function ChirpHome() {
     };
   }, [fetchData]);
 
+  function openModal(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    setModalIsOpen({ _id: e.currentTarget.getAttribute("data-id"), body: e.currentTarget.getAttribute("data-body") });
+  }
+
+  function closeModal() {
+    setModalIsOpen(null);
+  }
+
   if (loading) {
     return <LoadingIcon />;
   }
+
+  Modal.setAppElement("#__next");
 
   return (
     <>
@@ -49,23 +57,40 @@ export default function ChirpHome() {
       <main className='p-6 space-y-6 overflow-y-scroll duration-200 bg-zinc-100 dark:bg-zinc-700'>
         <CreatePost fetchData={fetchData} />
         {posts.map((post) => {
-          return <Post item={post} key={post._id} />;
+          return <Post item={post} key={post._id} openModal={openModal} />;
         })}
+        <Modal
+          isOpen={!!modalIsOpen}
+          onRequestClose={closeModal}
+          className='w-full max-w-screen-lg p-4 bg-white rounded-lg dark:bg-zinc-800'
+          style={{
+            overlay: {
+              backgroundColor: "rgba(63, 63, 70, .8)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: "10px",
+            },
+          }}
+        >
+          <EditModal target={modalIsOpen} closeModal={closeModal} fetchData={fetchData} />
+        </Modal>
       </main>
     </>
   );
 }
 
-const demoUser = {
-  id: "6276d0c602ce122f7b8b11ec",
-  name: "Jesse Hall",
-  nickname: "codestackr",
-  picture: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png",
-};
-
-const CreatePost = ({ fetchData }: { fetchData: () => Promise<void> }) => {
-  const [textareaValue, setTextareaValue] = useState("");
-  const [inputDisabled, setInputDisabled] = useState(false);
+const EditModal = ({
+  target,
+  closeModal,
+  fetchData,
+}: {
+  target: OpenModalItem | null;
+  closeModal: () => void;
+  fetchData: () => Promise<void>;
+}) => {
+  const [textareaValue, setTextareaValue] = useState(target?.body || "");
+  const [loading, setLoading] = useState(false);
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setTextareaValue(e.target.value);
@@ -74,125 +99,98 @@ const CreatePost = ({ fetchData }: { fetchData: () => Promise<void> }) => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    setInputDisabled(true);
+    if (!target) return;
 
-    const newPost = {
-      postedAt: Date.now(),
-      body: textareaValue,
-      likes: [],
-      user: {
-        id: demoUser.id,
-        name: demoUser.name,
-        nickname: demoUser.nickname,
-        picture: demoUser.picture,
-      },
-    };
+    setLoading(true);
+
+    const updatedTweet = { _id: target._id, body: textareaValue };
 
     try {
-      const response = await fetch("/api/chirp", {
-        method: "POST",
+      const data = await fetch("/api/chirp", {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newPost),
+        body: JSON.stringify(updatedTweet),
       });
 
-      //TODO this is not enough!
-      if (!response.ok) {
-        console.log(response.statusText);
+      setLoading(false);
+
+      if (data.ok) {
+        // close modal and refetch data
+        closeModal();
+        fetchData();
+        return;
       } else {
-        const responseJSON = await response.json();
-        console.log(responseJSON);
+        console.error(data.statusText);
       }
     } catch (error) {
-      if (error instanceof Error) {
-        console.error(error);
-      }
+      console.error(error);
     }
-
-    // refetch data
-    fetchData();
-
-    // rest textarea
-    setTextareaValue("");
-
-    // enable button again
-    setInputDisabled(false);
   };
-  return (
-    //!Needs to be protected by auth
-    <form className='flex flex-row items-start w-full gap-x-3' onSubmit={handleSubmit}>
-      <img
-        src='https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png'
-        alt='Profile picture'
-        className='p-1 rounded-full'
-        width={40}
-        height={40}
-      />
-      <TextareaAutosize
-        className='flex-1 px-4 py-2 rounded-lg resize-none ring-zinc-300 ring-1 dark:ring-0 dark:focus:ring-0 dark:focus:border-0 dark:focus:outline-blue-700 focus:outline-blue-700 dark:focus:ring-blue-700 dark:focus:outline-none placeholder-zinc-500 dark:placeholder-zinc-400 dark:bg-zinc-800'
-        value={textareaValue}
-        onChange={handleTextareaChange}
-        placeholder='Whats on your mind?'
-      />
-      <button
-        type='submit'
-        className='px-8 py-2 font-semibold duration-150 bg-blue-700 rounded-lg hover:bg-blue-900 text-zinc-100 disabled:bg-zinc-500'
-        disabled={inputDisabled}
-      >
-        Post
-      </button>
-    </form>
-  );
-};
 
-const Post = ({ item }: { item: IPost }) => {
   return (
-    <article className='flex flex-col px-4 py-3 bg-white rounded-lg gap-y-2 dark:bg-zinc-800 ring-1 ring-zinc-300 drop-shadow-sm dark:ring-0 dark:drop-shadow-none'>
-      <div className='grid grid-cols-[45px_1fr_20px] gap-3'>
-        <img
-          loading='lazy'
-          src={item.user.picture}
-          alt='Profile picture'
-          className='rounded-full place-self-center'
-          width={45}
-          height={45}
+    <div>
+      <div className='flex flex-row items-start justify-between'>
+        <span className='mb-4 text-xl font-semibold'>Edit Item</span>
+        <button onClick={closeModal}>
+          <CloseIcon />
+        </button>
+      </div>
+      <form className='flex flex-col items-end gap-3' onSubmit={handleSubmit}>
+        <TextareaAutosize
+          className='w-full p-2 rounded-lg resize-none ring-zinc-300 ring-1 dark:ring-1 dark:ring-zinc-500 dark:focus:ring-0 dark:focus:border-0 dark:focus-visible:outline-blue-700 focus:outline-blue-700 dark:focus:outline-none placeholder-zinc-500 dark:placeholder-zinc-400 dark:bg-zinc-700 required:invalid:ring-red-600 dark:focus-visible:outline-offset-[0px]'
+          value={textareaValue}
+          onChange={handleTextareaChange}
+          placeholder='Edit item'
+          required
         />
-        <div className='flex flex-col justify-between'>
-          <p className='text-lg font-semibold'>{item.user.nickname}</p>
-          <p className='text-sm text-zinc-500 dark:text-zinc-300'>{new Date(item.postedAt).toLocaleString()}</p>
-        </div>
-      </div>
-      <p>{item.body}</p>
-      <div className='flex flex-row border-t-[1px] border-zinc-200 dark:border-zinc-600 pt-2 gap-x-2 '>
-        <span className='mr-auto text-zinc-500 dark:text-zinc-300'>
-          {item.likes.length} {item.likes.length === 1 ? "Like" : "Likes"}
-        </span>
-        <button>Like</button>
-        <button>Share</button>
-        <button>Edit</button>
-        <button>Delete</button>
-      </div>
-    </article>
+        <button
+          className='h-10 font-semibold duration-150 bg-blue-700 rounded-lg w-full hover:bg-blue-900 text-zinc-100 max-w-[100px] flex items-center justify-center'
+          disabled={loading}
+        >
+          {!loading ? "Update" : <LoadingIcon2 />}
+        </button>
+      </form>
+    </div>
   );
 };
 
-const LoadingIcon = () => {
+const CloseIcon = () => {
   return (
-    <div className='ml-auto mr-auto mt-[40vh]'>
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      fill='none'
+      viewBox='0 0 24 24'
+      strokeWidth={1.5}
+      stroke='currentColor'
+      className='w-7 h-7 hover:text-red-600'
+    >
+      <path strokeLinecap='round' strokeLinejoin='round' d='M6 18L18 6M6 6l12 12' />
+    </svg>
+  );
+};
+
+const LoadingIcon2 = () => {
+  return (
+    <div role='status' className=''>
       <svg
-        className='w-8 h-8 mr-3 -ml-1 text-slate-500 dark:text-zinc-100 animate-spin'
-        xmlns='http://www.w3.org/2000/svg'
+        aria-hidden='true'
+        className='inline w-6 h-6 text-zinc-400 fill-zinc-100 animate-spin'
+        viewBox='0 0 100 101'
         fill='none'
-        viewBox='0 0 24 24'
+        xmlns='http://www.w3.org/2000/svg'
       >
-        <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
         <path
-          className='opacity-75'
+          d='M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z'
           fill='currentColor'
-          d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-        ></path>
+        />
+        <path
+          d='M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z'
+          fill='currentFill'
+        />
       </svg>
+      <span className='sr-only'>Loading...</span>
     </div>
   );
 };

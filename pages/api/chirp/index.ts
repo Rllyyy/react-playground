@@ -48,7 +48,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const insertDataJson = await insertData.json();
         res.status(200).json(insertDataJson);
         break;
-
+      case "PUT":
+        const updateData = await fetch(`${baseUrl}/updateOne`, {
+          ...fetchOptions,
+          body: JSON.stringify({
+            ...fetchBody,
+            filter: { _id: { $oid: req.body._id } },
+            update: {
+              $set: {
+                body: req.body.body,
+              },
+            },
+          }),
+        });
+        const updateDataJSON = await updateData.json();
+        res.status(200).json(updateDataJSON);
+        break;
       default:
         break;
     }
@@ -58,3 +73,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
   }
 }
+
+// TODO
+// - prevent empty data
+// - prevent injection
