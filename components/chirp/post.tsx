@@ -1,3 +1,5 @@
+import React from "react";
+
 export interface IPost {
   _id: string;
   postedAt: Date;
@@ -11,7 +13,47 @@ export interface IPost {
   };
 }
 
-export const Post = ({ item, openModal }: { item: IPost; openModal: (item: any) => void }) => {
+export const Post = ({
+  item,
+  openModal,
+  fetchData,
+}: {
+  item: IPost;
+  openModal: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+  fetchData: () => Promise<void>;
+}) => {
+  const handleItemDelete = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    e.preventDefault();
+
+    const _id = e.currentTarget.getAttribute("data-id");
+    //console.log(JSON.stringify({ _id }));
+    //return;
+
+    if (!_id) return;
+
+    //console.log(responseJson);
+    try {
+      const response = await fetch(`/api/chirp`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ _id }),
+      });
+
+      if (response.ok) {
+        const responseJson = await response.json();
+        fetchData();
+      } else {
+        console.error(response.statusText);
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error(error.message);
+      }
+    }
+  };
+
   return (
     <article className='flex flex-col px-4 py-3 bg-white rounded-lg gap-y-2 dark:bg-zinc-800 ring-1 ring-zinc-300 drop-shadow-sm dark:ring-0 dark:drop-shadow-none'>
       <div className='grid grid-cols-[45px_1fr_20px] gap-3'>
@@ -37,7 +79,9 @@ export const Post = ({ item, openModal }: { item: IPost; openModal: (item: any) 
         <button data-id={item._id} data-body={item.body} onClick={openModal}>
           Edit
         </button>
-        <button>Delete</button>
+        <button data-id={item._id} onClick={handleItemDelete}>
+          Delete
+        </button>
       </div>
     </article>
   );

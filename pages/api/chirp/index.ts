@@ -64,6 +64,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const updateDataJSON = await updateData.json();
         res.status(200).json(updateDataJSON);
         break;
+      case "DELETE":
+        const deleteData = await fetch(`${baseUrl}/deleteOne`, {
+          ...fetchOptions,
+          body: JSON.stringify({
+            ...fetchBody,
+            filter: { _id: { $oid: req.body._id } },
+          }),
+        });
+        const deleteDataJSON = await deleteData.json();
+        res.status(200).json(deleteDataJSON);
       default:
         break;
     }

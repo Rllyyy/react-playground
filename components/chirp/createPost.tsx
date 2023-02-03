@@ -1,5 +1,6 @@
 import TextareaAutosize from "react-textarea-autosize";
 import React, { useState } from "react";
+import { ComponentLoadingIcon } from "./componentLoadingIcon";
 
 const demoUser = {
   id: "6276d0c602ce122f7b8b11ec",
@@ -10,7 +11,7 @@ const demoUser = {
 
 export const CreatePost = ({ fetchData }: { fetchData: () => Promise<void> }) => {
   const [textareaValue, setTextareaValue] = useState("");
-  const [inputDisabled, setInputDisabled] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setTextareaValue(e.target.value);
@@ -19,7 +20,7 @@ export const CreatePost = ({ fetchData }: { fetchData: () => Promise<void> }) =>
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    setInputDisabled(true);
+    setLoading(true);
 
     const newPost = {
       postedAt: Date.now(),
@@ -62,7 +63,7 @@ export const CreatePost = ({ fetchData }: { fetchData: () => Promise<void> }) =>
     setTextareaValue("");
 
     // enable button again
-    setInputDisabled(false);
+    setLoading(false);
   };
   return (
     //!Needs to be protected by auth
@@ -83,10 +84,10 @@ export const CreatePost = ({ fetchData }: { fetchData: () => Promise<void> }) =>
       />
       <button
         type='submit'
-        className='px-8 py-2 font-semibold duration-150 bg-blue-700 rounded-lg hover:bg-blue-900 text-zinc-100 disabled:bg-zinc-500'
-        disabled={inputDisabled}
+        className='w-full flex items-center justify-center font-semibold duration-150 bg-blue-700 rounded-lg hover:bg-blue-900 text-zinc-100 disabled:bg-zinc-500 max-w-[100px] h-10'
+        disabled={loading}
       >
-        Post
+        {!loading ? "Post" : <ComponentLoadingIcon />}
       </button>
     </form>
   );

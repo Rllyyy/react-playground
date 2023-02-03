@@ -1,8 +1,8 @@
 export const LoadingIcon = () => {
   return (
-    <div className='ml-auto mr-auto mt-[40vh]'>
+    <div className='flex justify-center ml-auto mr-auto'>
       <svg
-        className='w-8 h-8 mr-3 -ml-1 text-slate-500 dark:text-zinc-100 animate-spin'
+        className='w-8 h-8 mr-3 -ml-1 text-slate-500 dark:text-zinc-100 animate-spin mt-[10vh]'
         xmlns='http://www.w3.org/2000/svg'
         fill='none'
         viewBox='0 0 24 24'
