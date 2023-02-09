@@ -2,18 +2,68 @@ import TextareaAutosize from "react-textarea-autosize";
 import React, { useState } from "react";
 import { ComponentLoadingIcon } from "./componentLoadingIcon";
 import { OpenModalItem } from "@/pages/chirp";
+import { IPost } from "./post";
+import { fetcher } from "./posts";
+import useSWR, { MutatorOptions } from "swr";
 
-export const EditModal = ({
-  target,
-  closeModal,
-  fetchData,
-}: {
-  target: OpenModalItem | null;
-  closeModal: () => void;
-  fetchData: () => Promise<void>;
-}) => {
+//TODO remove this fake delay
+const delay = () => new Promise<void>((resolve) => setTimeout(() => resolve(), 4000));
+
+async function updatePost(updatedTweet: Pick<IPost, "_id" | "body">) {
+  await delay();
+
+  try {
+    const data = await fetch("/api/chirp", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedTweet),
+    });
+
+    if (data.ok) {
+      return data.json();
+    } else {
+      console.error(data.statusText);
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(error);
+    }
+  }
+}
+
+function updatePostOptions(updatePost: Pick<IPost, "_id" | "body">): MutatorOptions {
+  return {
+    optimisticData: (posts: IPost[]) => {
+      return posts.map((post) => {
+        if (post._id === updatePost._id) {
+          return { ...post, body: updatePost.body };
+        } else {
+          return post;
+        }
+      });
+    },
+    rollbackOnError: true,
+    populateCache: (result, currentData) => {
+      return currentData.map((post: IPost) => {
+        if (post._id === updatePost._id) {
+          return { ...post, body: updatePost.body };
+        } else {
+          return post;
+        }
+      });
+    },
+    revalidate: false,
+  };
+}
+
+/* upsertedId  */
+
+export const EditModal = ({ target, closeModal }: { target: OpenModalItem | null; closeModal: () => void }) => {
   const [textareaValue, setTextareaValue] = useState(target?.body || "");
-  const [loading, setLoading] = useState(false);
+
+  const { mutate } = useSWR<IPost[], Error>("/api/chirp", fetcher);
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setTextareaValue(e.target.value);
@@ -22,36 +72,12 @@ export const EditModal = ({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!target) return;
-
-    setLoading(true);
+    if (!target || !target._id) return;
 
     const updatedTweet = { _id: target._id, body: textareaValue };
 
-    try {
-      const data = await fetch("/api/chirp", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedTweet),
-      });
-
-      setLoading(false);
-
-      if (data.ok) {
-        // close modal and refetch data
-        closeModal();
-        fetchData();
-        return;
-      } else {
-        console.error(data.statusText);
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error(error);
-      }
-    }
+    closeModal();
+    await mutate(updatePost(updatedTweet), updatePostOptions(updatedTweet));
   };
 
   return (
@@ -72,9 +98,9 @@ export const EditModal = ({
         />
         <button
           className='h-10 font-semibold duration-150 bg-blue-700 rounded-lg w-full hover:bg-blue-900 text-zinc-100 max-w-[100px] flex items-center justify-center'
-          disabled={loading}
+          /* disabled={loading} */
         >
-          {!loading ? "Update" : <ComponentLoadingIcon />}
+          "Update"
         </button>
       </form>
     </div>

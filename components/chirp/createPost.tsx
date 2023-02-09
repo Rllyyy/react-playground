@@ -1,17 +1,72 @@
-import TextareaAutosize from "react-textarea-autosize";
 import React, { useState } from "react";
-import { ComponentLoadingIcon } from "./componentLoadingIcon";
+import TextareaAutosize from "react-textarea-autosize";
+import useSWR, { MutatorOptions } from "swr";
+import { v4 as uuidv4 } from "uuid";
+import { IPost } from "./post";
+import { fetcher } from "./posts";
 
 const demoUser = {
   id: "6276d0c602ce122f7b8b11ec",
   name: "Jesse Hall",
-  nickname: "codestackr",
+  nickname: "demo_user",
   picture: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png",
 };
 
-export const CreatePost = ({ fetchData }: { fetchData: () => Promise<void> }) => {
+//TODO remove this fake delay
+const delay = () => new Promise<void>((resolve) => setTimeout(() => resolve(), 2000));
+
+async function addPost(newPost: IPost): Promise<any> {
+  //remove _id as it is just temporary
+  const { _id, ...rest } = newPost;
+
+  await delay();
+
+  try {
+    const response = await fetch("/api/chirp", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(rest),
+    });
+
+    //TODO this is not enough!
+    if (!response.ok) {
+      console.log(response.statusText);
+    } else {
+      const responseJSON = await response.json();
+      return responseJSON;
+      //console.log(responseJSON);
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(error);
+    }
+  }
+}
+
+function addPostOptions(newPost: IPost): MutatorOptions {
+  return {
+    optimisticData: (posts: IPost[]) => {
+      //console.log(newPost);
+      return [newPost, ...(posts || [])];
+    },
+    rollbackOnError: true,
+    populateCache: (result, currentData) => {
+      const postWithId = {
+        ...newPost,
+        _id: result.insertedId,
+      };
+      return [postWithId, ...(currentData || [])];
+    },
+    revalidate: false,
+  };
+}
+
+export const CreatePost = () => {
+  const { mutate } = useSWR<IPost[], Error>("/api/chirp", fetcher);
+
   const [textareaValue, setTextareaValue] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setTextareaValue(e.target.value);
@@ -20,11 +75,15 @@ export const CreatePost = ({ fetchData }: { fetchData: () => Promise<void> }) =>
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    setLoading(true);
+    const value = textareaValue;
+
+    // rest textarea
+    setTextareaValue("");
 
     const newPost = {
+      _id: uuidv4(),
       postedAt: Date.now(),
-      body: textareaValue,
+      body: value,
       likes: [],
       user: {
         id: demoUser.id,
@@ -34,36 +93,7 @@ export const CreatePost = ({ fetchData }: { fetchData: () => Promise<void> }) =>
       },
     };
 
-    try {
-      const response = await fetch("/api/chirp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newPost),
-      });
-
-      //TODO this is not enough!
-      if (!response.ok) {
-        console.log(response.statusText);
-      } else {
-        const responseJSON = await response.json();
-        console.log(responseJSON);
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error(error);
-      }
-    }
-
-    // refetch data
-    fetchData();
-
-    // rest textarea
-    setTextareaValue("");
-
-    // enable button again
-    setLoading(false);
+    await mutate(addPost(newPost), addPostOptions(newPost));
   };
   return (
     //!Needs to be protected by auth
@@ -85,9 +115,8 @@ export const CreatePost = ({ fetchData }: { fetchData: () => Promise<void> }) =>
       <button
         type='submit'
         className='w-full flex items-center justify-center font-semibold duration-150 bg-blue-700 rounded-lg hover:bg-blue-900 text-zinc-100 disabled:bg-zinc-500 max-w-[100px] h-10'
-        disabled={loading}
       >
-        {!loading ? "Post" : <ComponentLoadingIcon />}
+        Post
       </button>
     </form>
   );

@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/chirp/sidebar";
+import { PostsProvider } from "@/components/chirp/postsContext";
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -36,10 +37,12 @@ export default function App({ Component, pageProps }: AppProps) {
         {!isChirp ? (
           <Component {...pageProps} />
         ) : (
-          <div className='grid grid-cols-[250px_1fr] h-[calc(100vh_-_56px)] '>
-            <Sidebar />
-            <Component {...pageProps} />
-          </div>
+          <PostsProvider>
+            <div className='flex flex-col-reverse md:grid  md:grid-cols-[250px_1fr] h-[calc(100dvh_-_56px)] '>
+              <Sidebar />
+              <Component {...pageProps} />
+            </div>
+          </PostsProvider>
         )}
       </ThemeProvider>
     </>

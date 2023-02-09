@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 const LinkStyle =
-  "flex flex-row items-center w-full gap-4 px-4 py-4 duration-150 rounded-lg hover:no-underline text-zinc-200";
+  "flex flex-row items-center md:w-full gap-4 px-4 py-4 duration-150 rounded-lg hover:no-underline text-zinc-200 ";
 
 const ActiveTabLink = `${LinkStyle} bg-blue-700 hover:bg-blue-900`;
 const InactiveTabLink = `${LinkStyle}  dark:hover:bg-zinc-700 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-100`;
@@ -27,7 +27,7 @@ export function Sidebar() {
   }, [router]);
 
   return (
-    <aside className='flex flex-col h-full gap-2 p-4 duration-200 bg-white shadow-lg dark:bg-zinc-800 border-r-zinc-200 border-r-[1px] dark:border-r-zinc-700'>
+    <aside className='flex md:flex-col md:h-full gap-2 p-2 md:p-4 duration-200 bg-white shadow-lg dark:bg-zinc-800 border-r-zinc-200 border-t-[2px] md:border-t-0 dark:border-t-zinc-600'>
       {/* search box */}
       <input
         type='text'
@@ -36,15 +36,15 @@ export function Sidebar() {
       />
       <Link className={tab === "home" ? ActiveTabLink : InactiveTabLink} href='/chirp'>
         <HomeIcon />
-        <span className='text-lg font-semibold'>Home</span>
+        <span className='hidden text-lg font-semibold md:block '>Home</span>
       </Link>
       <Link className={tab === "profile" ? ActiveTabLink : InactiveTabLink} href='/chirp/profile'>
         <ProfileIcon />
-        <span className='text-lg font-semibold'>Profile</span>
+        <span className='hidden text-lg font-semibold md:block'>Profile</span>
       </Link>
-      <button className='flex flex-row items-center w-full gap-4 px-4 py-4 mt-auto duration-150 rounded-lg dark:hover:bg-zinc-700 hover:bg-zinc-200'>
+      <button className='flex flex-row items-center gap-4 px-4 py-4 mt-auto duration-150 rounded-lg md:w-full dark:hover:bg-zinc-700 hover:bg-zinc-200'>
         <LogoutIcon />
-        <span className='text-lg font-semibold'>Logout</span>
+        <span className='hidden text-lg font-semibold md:block'>Logout</span>
       </button>
     </aside>
   );

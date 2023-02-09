@@ -2,8 +2,9 @@ import { CreatePost } from "@/components/chirp/createPost";
 import { EditModal } from "@/components/chirp/EditModal";
 import { IPost } from "@/components/chirp/post";
 import { Posts } from "@/components/chirp/posts";
+import { IPostsContext, PostsContext } from "@/components/chirp/postsContext";
 import Head from "next/head";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useContext } from "react";
 import Modal from "react-modal";
 
 export type OpenModalItem = {
@@ -12,27 +13,7 @@ export type OpenModalItem = {
 };
 
 export default function ChirpHome() {
-  const [posts, setPosts] = useState<IPost[]>([]);
-  const [postsLoading, setPostsLoading] = useState(true);
   const [modalIsOpen, setModalIsOpen] = useState<OpenModalItem | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setPostsLoading(true);
-    const res = await fetch("/api/chirp");
-    const json = await res.json();
-    setPosts(json);
-    setPostsLoading(false);
-  }, []);
-
-  // Try this with swr maybe
-  useEffect(() => {
-    fetchData();
-
-    return () => {
-      setPosts([]);
-      setPostsLoading(true);
-    };
-  }, [fetchData]);
 
   function openModal(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     setModalIsOpen({ _id: e.currentTarget.getAttribute("data-id"), body: e.currentTarget.getAttribute("data-body") });
@@ -50,9 +31,9 @@ export default function ChirpHome() {
         <title>Chirp</title>
         <meta name='description' content='A social media clone' />
       </Head>
-      <main className='p-6 space-y-6 overflow-y-scroll duration-200 bg-zinc-100 dark:bg-zinc-700'>
-        <CreatePost fetchData={fetchData} />
-        <Posts posts={posts} openModal={openModal} fetchData={fetchData} postsLoading={postsLoading} />
+      <main className='p-4 space-y-4 overflow-y-scroll duration-200 md:space-y-6 md:p-6 bg-zinc-100 dark:bg-zinc-700'>
+        <CreatePost />
+        <Posts openModal={openModal} />
         <Modal
           isOpen={!!modalIsOpen}
           onRequestClose={closeModal}
@@ -67,9 +48,11 @@ export default function ChirpHome() {
             },
           }}
         >
-          <EditModal target={modalIsOpen} closeModal={closeModal} fetchData={fetchData} />
+          <EditModal target={modalIsOpen} closeModal={closeModal} />
         </Modal>
       </main>
     </>
   );
 }
+
+//TODO - remove context

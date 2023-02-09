@@ -1,3 +1,5 @@
+//TODO remove this
+
 export const ComponentLoadingIcon = () => {
   return (
     <div role='status' className=''>
