@@ -6,12 +6,7 @@ import { IPost } from "./post";
 import { fetcher } from "./posts";
 import useSWR, { MutatorOptions } from "swr";
 
-//TODO remove this fake delay
-const delay = () => new Promise<void>((resolve) => setTimeout(() => resolve(), 4000));
-
-async function updatePost(updatedTweet: Pick<IPost, "_id" | "body">) {
-  await delay();
-
+async function updatePost(updatedTweet: Pick<IPost, "uid" | "body">) {
   try {
     const data = await fetch("/api/chirp", {
       method: "PUT",
@@ -33,11 +28,11 @@ async function updatePost(updatedTweet: Pick<IPost, "_id" | "body">) {
   }
 }
 
-function updatePostOptions(updatePost: Pick<IPost, "_id" | "body">): MutatorOptions {
+function updatePostOptions(updatePost: Pick<IPost, "uid" | "body">): MutatorOptions {
   return {
     optimisticData: (posts: IPost[]) => {
       return posts.map((post) => {
-        if (post._id === updatePost._id) {
+        if (post.uid === updatePost.uid) {
           return { ...post, body: updatePost.body };
         } else {
           return post;
@@ -47,7 +42,7 @@ function updatePostOptions(updatePost: Pick<IPost, "_id" | "body">): MutatorOpti
     rollbackOnError: true,
     populateCache: (result, currentData) => {
       return currentData.map((post: IPost) => {
-        if (post._id === updatePost._id) {
+        if (post.uid === updatePost.uid) {
           return { ...post, body: updatePost.body };
         } else {
           return post;
@@ -72,9 +67,9 @@ export const EditModal = ({ target, closeModal }: { target: OpenModalItem | null
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!target || !target._id) return;
+    if (!target || !target.uid) return;
 
-    const updatedTweet = { _id: target._id, body: textareaValue };
+    const updatedTweet = { uid: target.uid, body: textareaValue };
 
     closeModal();
     await mutate(updatePost(updatedTweet), updatePostOptions(updatedTweet));
@@ -96,11 +91,8 @@ export const EditModal = ({ target, closeModal }: { target: OpenModalItem | null
           placeholder='Edit item'
           required
         />
-        <button
-          className='h-10 font-semibold duration-150 bg-blue-700 rounded-lg w-full hover:bg-blue-900 text-zinc-100 max-w-[100px] flex items-center justify-center'
-          /* disabled={loading} */
-        >
-          "Update"
+        <button className='h-10 font-semibold duration-150 bg-blue-700 rounded-lg w-full hover:bg-blue-900 text-zinc-100 max-w-[100px] flex items-center justify-center'>
+          Update
         </button>
       </form>
     </div>

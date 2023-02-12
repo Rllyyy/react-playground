@@ -4,6 +4,7 @@ import useSWR, { MutatorOptions } from "swr";
 import { v4 as uuidv4 } from "uuid";
 import { IPost } from "./post";
 import { fetcher } from "./posts";
+import { motion, spring } from "framer-motion";
 
 const demoUser = {
   id: "6276d0c602ce122f7b8b11ec",
@@ -13,21 +14,15 @@ const demoUser = {
 };
 
 //TODO remove this fake delay
-const delay = () => new Promise<void>((resolve) => setTimeout(() => resolve(), 2000));
 
-async function addPost(newPost: IPost): Promise<any> {
-  //remove _id as it is just temporary
-  const { _id, ...rest } = newPost;
-
-  await delay();
-
+async function addPost(newPost: Omit<IPost, "_id">): Promise<any> {
   try {
     const response = await fetch("/api/chirp", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(rest),
+      body: JSON.stringify(newPost),
     });
 
     //TODO this is not enough!
@@ -45,7 +40,7 @@ async function addPost(newPost: IPost): Promise<any> {
   }
 }
 
-function addPostOptions(newPost: IPost): MutatorOptions {
+function addPostOptions(newPost: Omit<IPost, "_id">): MutatorOptions {
   return {
     optimisticData: (posts: IPost[]) => {
       //console.log(newPost);
@@ -80,9 +75,11 @@ export const CreatePost = () => {
     // rest textarea
     setTextareaValue("");
 
+    const now = Date.now();
+
     const newPost = {
-      _id: uuidv4(),
-      postedAt: Date.now(),
+      uid: `${uuidv4()}_${now}`,
+      postedAt: now,
       body: value,
       likes: [],
       user: {
@@ -95,6 +92,7 @@ export const CreatePost = () => {
 
     await mutate(addPost(newPost), addPostOptions(newPost));
   };
+
   return (
     //!Needs to be protected by auth
     <form className='flex flex-row items-start w-full gap-x-3' onSubmit={handleSubmit}>

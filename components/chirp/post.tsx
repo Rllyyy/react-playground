@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 export interface IPost {
   _id: string;
-  databaseItemId?: string;
+  uid: string;
   postedAt: number;
   body: string;
   likes: Array<string>;
@@ -17,14 +17,18 @@ export interface IPost {
   };
 }
 
-async function deletePost({ _id }: { _id: NonNullable<IPost["_id"]> }): Promise<any> {
+export interface IPostDatabase extends IPost {
+  _id: string;
+}
+
+async function deletePost({ uid }: { uid: NonNullable<IPostDatabase["uid"]> }): Promise<any> {
   try {
     const response = await fetch(`/api/chirp`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ _id }),
+      body: JSON.stringify({ uid }),
     });
 
     if (response.ok) {
@@ -40,13 +44,13 @@ async function deletePost({ _id }: { _id: NonNullable<IPost["_id"]> }): Promise<
   }
 }
 
-function deletePostOptions({ _id }: { _id: NonNullable<IPost["_id"]> }): MutatorOptions {
+function deletePostOptions({ uid }: { uid: NonNullable<IPost["uid"]> }): MutatorOptions {
   //const filteredItems =
 
   return {
-    optimisticData: (posts: IPost[]) => posts.filter((post) => post._id !== _id),
+    optimisticData: (posts: IPost[]) => posts.filter((post) => post.uid !== uid),
     rollbackOnError: true,
-    populateCache: (response, currentData) => currentData.filter((post: IPost) => post._id !== _id),
+    populateCache: (response, currentData) => currentData.filter((post: IPost) => post.uid !== uid),
     revalidate: false,
   };
 }
@@ -55,32 +59,38 @@ interface PostComponent {
   body: IPost["body"];
   likesCount: number;
   _id: IPost["_id"];
+  uid: IPost["uid"];
   postedAt: IPost["postedAt"];
   picture: IPost["user"]["picture"];
   nickname: IPost["user"]["nickname"];
   openModal: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
 }
 
-export const Post = ({ body, likesCount, _id, postedAt, picture, nickname, openModal }: PostComponent) => {
+export const Post = memo(({ body, likesCount, uid, _id, postedAt, picture, nickname, openModal }: PostComponent) => {
   const { mutate } = useSWR<IPost[], Error>("/api/chirp", fetcher);
 
   const handleItemDelete = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault();
 
-    if (!_id) {
-      console.error("_id");
+    if (!uid) {
+      console.error("missing uid");
       return;
     }
 
-    await mutate(deletePost({ _id }), deletePostOptions({ _id }));
+    await mutate(deletePost({ uid }), deletePostOptions({ uid }));
   };
 
   return (
     <motion.article
       className='flex flex-col px-4 py-3 bg-white rounded-lg gap-y-2 dark:bg-zinc-800 ring-1 ring-zinc-300 drop-shadow-sm dark:ring-0 dark:drop-shadow-none'
       layout
+      key={uid || _id}
+      animate={{ opacity: 1 }}
+      initial={{ opacity: 0 }}
+      exit={{ opacity: 0, transition: { delay: 0, duration: 0.1 } }}
+      transition={{ delay: 0.3 }}
     >
-      <div className='grid grid-cols-[45px_1fr_20px] gap-3'>
+      <div className='grid grid-cols-[45px_1fr] gap-3'>
         <img
           loading='lazy'
           src={picture}
@@ -91,14 +101,14 @@ export const Post = ({ body, likesCount, _id, postedAt, picture, nickname, openM
         />
         <div className='flex flex-col justify-between'>
           <p className='text-lg font-semibold'>{nickname}</p>
-          <p className='text-sm text-zinc-500 dark:text-zinc-300'>
+          <time className='text-sm text-zinc-500 dark:text-zinc-400'>
             {new Intl.DateTimeFormat("de-DE", {
               dateStyle: "short",
               timeStyle: "short",
             })
               .format(postedAt)
               .replace(",", "")}
-          </p>
+          </time>
         </div>
       </div>
       <p>{body}</p>
@@ -107,13 +117,13 @@ export const Post = ({ body, likesCount, _id, postedAt, picture, nickname, openM
           {likesCount} {likesCount === 1 ? "Like" : "Likes"}
         </span>
         <button>Like</button>
-        {!_id.includes("-") && (
-          <button data-id={_id} data-body={body} onClick={openModal}>
+        {uid?.includes("-") && (
+          <button data-id={uid} data-body={body} onClick={openModal}>
             Edit
           </button>
         )}
-        {!_id.includes("-") && <button /* data-id={_id} */ onClick={handleItemDelete}>Delete</button>}
+        {uid?.includes("-") && <button onClick={handleItemDelete}>Delete</button>}
       </div>
     </motion.article>
   );
-};
+});

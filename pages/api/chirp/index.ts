@@ -1,5 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 
+const delay = () => new Promise<void>((resolve) => setTimeout(() => resolve(), 2000));
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -29,8 +31,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             sort: { postedAt: -1 },
           }),
         });
-        const data = await readData.json();
-        res.status(200).json(data.documents);
+
+        if (readData.ok) {
+          const data = await readData.json();
+          res.status(200).json(data.documents);
+        } else {
+          res.status(readData.status).json({ error: readData.statusText });
+        }
         break;
       case "POST":
         const newPost = req.body;
@@ -41,15 +48,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             document: newPost,
           }),
         });
-        const insertDataJson = await insertData.json();
-        res.status(200).json(insertDataJson);
+
+        if (insertData.ok) {
+          const insertDataJson = await insertData.json();
+          res.status(200).json(insertDataJson);
+        } else {
+          res.status(insertData.status).json({ error: insertData.statusText });
+        }
+
         break;
       case "PUT":
         const updateData = await fetch(`${baseUrl}/updateOne`, {
           ...fetchOptions,
           body: JSON.stringify({
             ...fetchBody,
-            filter: { _id: { $oid: req.body._id } },
+            filter: { uid: req.body.uid },
             update: {
               $set: {
                 body: req.body.body,
@@ -57,19 +70,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             },
           }),
         });
-        const updateDataJSON = await updateData.json();
-        res.status(200).json(updateDataJSON);
+
+        if (updateData.ok) {
+          const updateDataJSON = await updateData.json();
+          res.status(200).json(updateDataJSON);
+        } else {
+          res.status(updateData.status).json({ error: updateData.statusText });
+        }
+
         break;
       case "DELETE":
         const deleteData = await fetch(`${baseUrl}/deleteOne`, {
           ...fetchOptions,
           body: JSON.stringify({
             ...fetchBody,
-            filter: { _id: { $oid: req.body._id } },
+            filter: { uid: req.body.uid },
           }),
         });
-        const deleteDataJSON = await deleteData.json();
-        res.status(200).json(deleteDataJSON);
+
+        if (deleteData.ok) {
+          const deleteDataJSON = await deleteData.json();
+          res.status(200).json(deleteDataJSON);
+        } else {
+          res.status(deleteData.status).json({ error: deleteData.statusText });
+        }
       default:
         break;
     }

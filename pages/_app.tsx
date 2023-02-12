@@ -37,12 +37,10 @@ export default function App({ Component, pageProps }: AppProps) {
         {!isChirp ? (
           <Component {...pageProps} />
         ) : (
-          <PostsProvider>
-            <div className='flex flex-col-reverse md:grid  md:grid-cols-[250px_1fr] h-[calc(100dvh_-_56px)] '>
-              <Sidebar />
-              <Component {...pageProps} />
-            </div>
-          </PostsProvider>
+          <div className='flex flex-col-reverse md:grid  md:grid-cols-[250px_1fr] h-[calc(100dvh_-_56px)] '>
+            <Sidebar />
+            <Component {...pageProps} />
+          </div>
         )}
       </ThemeProvider>
     </>
