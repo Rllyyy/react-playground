@@ -8,7 +8,7 @@ import useSWR, { MutatorOptions } from "swr";
 
 async function updatePost(updatedTweet: Pick<IPost, "uid" | "body">) {
   try {
-    const data = await fetch("/api/chirp", {
+    const response = await fetch("/api/chirp", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -16,14 +16,15 @@ async function updatePost(updatedTweet: Pick<IPost, "uid" | "body">) {
       body: JSON.stringify(updatedTweet),
     });
 
-    if (data.ok) {
-      return data.json();
+    if (response.ok) {
+      return await response.json();
     } else {
-      console.error(data.statusText);
+      const { error } = await response.json();
+      throw new Error(`${error} (${response.status})`);
     }
   } catch (error) {
     if (error instanceof Error) {
-      console.error(error);
+      return { error: error.message };
     }
   }
 }
@@ -41,13 +42,17 @@ function updatePostOptions(updatePost: Pick<IPost, "uid" | "body">): MutatorOpti
     },
     rollbackOnError: true,
     populateCache: (result, currentData) => {
-      return currentData.map((post: IPost) => {
-        if (post.uid === updatePost.uid) {
-          return { ...post, body: updatePost.body };
-        } else {
-          return post;
-        }
-      });
+      if (!result.error) {
+        return currentData.map((post: IPost) => {
+          if (post.uid === updatePost.uid) {
+            return { ...post, body: updatePost.body };
+          } else {
+            return post;
+          }
+        });
+      } else {
+        return currentData;
+      }
     },
     revalidate: false,
   };

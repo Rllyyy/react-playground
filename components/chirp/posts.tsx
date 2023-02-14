@@ -56,7 +56,7 @@ export const Posts = ({ openModal }: Posts) => {
             body,
             likes,
             postedAt,
-            user: { picture, nickname },
+            user: { id: userID, picture, nickname },
           } = post;
           return (
             <Post
@@ -67,6 +67,7 @@ export const Posts = ({ openModal }: Posts) => {
               body={body}
               likesCount={likes?.length}
               postedAt={postedAt}
+              userID={userID}
               picture={picture}
               nickname={nickname}
             />

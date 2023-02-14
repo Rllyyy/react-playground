@@ -1,8 +1,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
 
 const delay = () => new Promise<void>((resolve) => setTimeout(() => resolve(), 2000));
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
+  const session = await getServerSession(req, res, authOptions);
+
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     "Access-Control-Request-Headers": "*",
@@ -58,6 +62,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
         break;
       case "PUT":
+        if (!session) {
+          res.status(401).json({ error: "Login to modify this item!" });
+          break;
+        }
+
         const updateData = await fetch(`${baseUrl}/updateOne`, {
           ...fetchOptions,
           body: JSON.stringify({
@@ -80,6 +89,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
         break;
       case "DELETE":
+        if (!session) {
+          res.status(401).json({ error: "Login to delete this item!" });
+          break;
+        }
+
         const deleteData = await fetch(`${baseUrl}/deleteOne`, {
           ...fetchOptions,
           body: JSON.stringify({

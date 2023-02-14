@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { ButtonHTMLAttributes, useEffect, useState } from "react";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 const LinkStyle =
   "flex flex-row items-center md:w-full gap-4 px-4 py-4 duration-150 rounded-lg hover:no-underline text-zinc-200 ";
@@ -42,13 +43,54 @@ export function Sidebar() {
         <ProfileIcon />
         <span className='hidden text-lg font-semibold md:block'>Profile</span>
       </Link>
-      <button className='flex flex-row items-center gap-4 px-4 py-4 mt-auto duration-150 rounded-lg md:w-full dark:hover:bg-zinc-700 hover:bg-zinc-200'>
-        <LogoutIcon />
-        <span className='hidden text-lg font-semibold md:block'>Logout</span>
-      </button>
+      <LoginLogoutButton />
     </aside>
   );
 }
+
+const LoginLogoutButton = () => {
+  const { data: session, status } = useSession();
+
+  if (status === "loading") return <></>;
+
+  return (
+    <>
+      {!session ? (
+        <LoginButton
+          onClick={() => signIn()}
+          className='flex flex-row items-center gap-4 px-4 py-4 mt-auto duration-150 rounded-lg md:w-full dark:hover:bg-zinc-700 hover:bg-zinc-200'
+        />
+      ) : (
+        <LogoutButton
+          onClick={() => signOut()}
+          className='flex flex-row items-center gap-4 px-4 py-4 mt-auto duration-150 rounded-lg md:w-full dark:hover:bg-zinc-700 hover:bg-zinc-200'
+        />
+      )}
+    </>
+  );
+};
+
+interface Props extends React.DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> {}
+
+const LoginButton: React.FC<Props> = (props) => {
+  return (
+    <button {...props}>
+      <LogoutIcon />
+      <span className='hidden text-lg font-semibold md:block'>Login</span>
+    </button>
+  );
+};
+
+const LogoutButton: React.FC<Props> = (props) => {
+  return (
+    <button {...props}>
+      <LogoutIcon />
+      <span className='hidden text-lg font-semibold md:block'>Logout</span>
+    </button>
+  );
+};
+
+// session.user {email, image, name}
 
 // Source: https://heroicons.com/
 function HomeIcon() {

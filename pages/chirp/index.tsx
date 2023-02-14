@@ -29,6 +29,7 @@ export default function ChirpHome() {
       <Head>
         <title>Chirp</title>
         <meta name='description' content='A social media clone' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'></meta>
       </Head>
       <motion.main className='p-4 space-y-4 overflow-y-scroll duration-200 md:space-y-6 md:p-6 bg-zinc-100 dark:bg-zinc-700'>
         <CreatePost />

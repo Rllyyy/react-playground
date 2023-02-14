@@ -7,8 +7,9 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/chirp/sidebar";
 import { PostsProvider } from "@/components/chirp/postsContext";
+import { SessionProvider } from "next-auth/react";
 
-export default function App({ Component, pageProps }: AppProps) {
+export default function App({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   const router = useRouter();
   const [isChirp, setIsChirp] = useState(false);
 
@@ -34,14 +35,16 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
       <ThemeProvider enableSystem={true} attribute='class'>
         <Navbar />
-        {!isChirp ? (
-          <Component {...pageProps} />
-        ) : (
-          <div className='flex flex-col-reverse md:grid  md:grid-cols-[250px_1fr] h-[calc(100dvh_-_56px)] '>
-            <Sidebar />
+        <SessionProvider session={session}>
+          {!isChirp ? (
             <Component {...pageProps} />
-          </div>
-        )}
+          ) : (
+            <div className='flex flex-col-reverse md:grid  md:grid-cols-[250px_1fr] h-[calc(100dvh_-_56px)] '>
+              <Sidebar />
+              <Component {...pageProps} />
+            </div>
+          )}
+        </SessionProvider>
       </ThemeProvider>
     </>
   );

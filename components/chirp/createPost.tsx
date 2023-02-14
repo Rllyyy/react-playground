@@ -4,13 +4,13 @@ import useSWR, { MutatorOptions } from "swr";
 import { v4 as uuidv4 } from "uuid";
 import { IPost } from "./post";
 import { fetcher } from "./posts";
-import { motion, spring } from "framer-motion";
+import { useSession } from "next-auth/react";
 
 const demoUser = {
   id: "6276d0c602ce122f7b8b11ec",
   name: "Jesse Hall",
   nickname: "demo_user",
-  picture: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png",
+  picture: "https://upload.wikimedia.org/wikipedia/commons/5/59/User-avatar.svg",
 };
 
 //TODO remove this fake delay
@@ -43,7 +43,6 @@ async function addPost(newPost: Omit<IPost, "_id">): Promise<any> {
 function addPostOptions(newPost: Omit<IPost, "_id">): MutatorOptions {
   return {
     optimisticData: (posts: IPost[]) => {
-      //console.log(newPost);
       return [newPost, ...(posts || [])];
     },
     rollbackOnError: true,
@@ -60,7 +59,7 @@ function addPostOptions(newPost: Omit<IPost, "_id">): MutatorOptions {
 
 export const CreatePost = () => {
   const { mutate } = useSWR<IPost[], Error>("/api/chirp", fetcher);
-
+  const { data: session, status } = useSession();
   const [textareaValue, setTextareaValue] = useState("");
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -68,12 +67,31 @@ export const CreatePost = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    if (status === "loading") return;
+
     e.preventDefault();
 
     const value = textareaValue;
 
     // rest textarea
     setTextareaValue("");
+
+    let user;
+    if (session && session.user._id) {
+      user = {
+        id: session.user._id,
+        name: session.user.email || "anonymous@mail.com",
+        nickname: session.user.name || "Anonymous",
+        picture: session.user.image || "https://upload.wikimedia.org/wikipedia/commons/5/59/User-avatar.svg",
+      };
+    } else {
+      user = {
+        id: demoUser.id,
+        name: demoUser.name,
+        nickname: demoUser.nickname,
+        picture: demoUser.picture,
+      };
+    }
 
     const now = Date.now();
 
@@ -82,12 +100,7 @@ export const CreatePost = () => {
       postedAt: now,
       body: value,
       likes: [],
-      user: {
-        id: demoUser.id,
-        name: demoUser.name,
-        nickname: demoUser.nickname,
-        picture: demoUser.picture,
-      },
+      user,
     };
 
     await mutate(addPost(newPost), addPostOptions(newPost));
@@ -97,9 +110,11 @@ export const CreatePost = () => {
     //!Needs to be protected by auth
     <form className='flex flex-row items-start w-full gap-x-3' onSubmit={handleSubmit}>
       <img
-        src='https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png'
+        src={`${
+          session?.user._id ? session.user.image : "https://upload.wikimedia.org/wikipedia/commons/5/59/User-avatar.svg"
+        }`}
         alt='Profile picture'
-        className='p-1 rounded-full'
+        className='p-1 rounded-full dark:bg-zinc-900 bg-zinc-300'
         width={40}
         height={40}
       />
