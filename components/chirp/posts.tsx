@@ -1,7 +1,5 @@
 import useSWR from "swr";
 import { AnimatePresence, motion } from "framer-motion";
-
-import { LoadingIcon } from "./loadingIcon";
 import { IPost, Post } from "./post";
 
 interface Posts {
@@ -24,7 +22,6 @@ export async function fetcher(url: string) {
       throw error;
     } else {
       const message = await res.text();
-      console.log(`json: ${message}`);
       const error = new Error(message) as SWRError;
       error.status = res.status;
       throw error;

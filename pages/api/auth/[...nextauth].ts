@@ -38,14 +38,13 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async session({ session, token, user }) {
-      if (session && session.user) {
+      if (session && session.user && user.id) {
         session.user._id = user.id;
       }
       return session;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: true,
 };
 
 export default NextAuth(authOptions);
