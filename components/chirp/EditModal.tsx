@@ -1,6 +1,5 @@
 import TextareaAutosize from "react-textarea-autosize";
 import React, { useState } from "react";
-import { ComponentLoadingIcon } from "./componentLoadingIcon";
 import { OpenModalItem } from "@/pages/chirp";
 import { IPost } from "./post";
 import { fetcher } from "./posts";

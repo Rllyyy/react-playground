@@ -1,7 +1,5 @@
 import useSWR from "swr";
 import { AnimatePresence, motion } from "framer-motion";
-
-import { LoadingIcon } from "./loadingIcon";
 import { IPost, Post } from "./post";
 
 interface Posts {
@@ -16,10 +14,18 @@ export async function fetcher(url: string) {
   const res = await fetch(url);
 
   if (!res.ok) {
-    const { error: message } = await res.json();
-    const error = new Error(message) as SWRError;
-    error.status = res.status;
-    throw error;
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.indexOf("application/json") !== -1) {
+      const { error: message } = await res.json();
+      const error = new Error(message) as SWRError;
+      error.status = res.status;
+      throw error;
+    } else {
+      const message = await res.text();
+      const error = new Error(message) as SWRError;
+      error.status = res.status;
+      throw error;
+    }
   }
 
   return res.json();

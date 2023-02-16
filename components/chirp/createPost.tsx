@@ -13,8 +13,6 @@ const demoUser = {
   picture: "https://upload.wikimedia.org/wikipedia/commons/5/59/User-avatar.svg",
 };
 
-//TODO remove this fake delay
-
 async function addPost(newPost: Omit<IPost, "_id">): Promise<any> {
   try {
     const response = await fetch("/api/chirp", {

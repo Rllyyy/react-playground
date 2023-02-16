@@ -19,7 +19,7 @@ export default function Home() {
               alt='Word-Challenge'
               width={800}
               height={800}
-              style={{ width: "100%", height: "auto", maxHeight: "240px", objectFit: "contain" }}
+              style={{ width: "100%", height: "240px", objectFit: "contain" }}
               className='bg-zinc-800'
               priority
             />
@@ -34,7 +34,7 @@ export default function Home() {
               alt='File-Challenge'
               width={800}
               height={800}
-              style={{ width: "100%", height: "auto", maxHeight: "240px", objectFit: "contain" }}
+              style={{ width: "100%", height: "240px", objectFit: "contain" }}
               className='bg-zinc-800'
               priority
             />
