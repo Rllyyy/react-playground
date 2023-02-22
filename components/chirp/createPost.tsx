@@ -8,8 +8,8 @@ import { useSession } from "next-auth/react";
 
 const demoUser = {
   id: "6276d0c602ce122f7b8b11ec",
-  name: "Jesse Hall",
-  nickname: "demo_user",
+  name: "Anonymous@mail.com",
+  nickname: "Anonymous",
   picture: "https://upload.wikimedia.org/wikipedia/commons/5/59/User-avatar.svg",
 };
 
@@ -23,17 +23,15 @@ async function addPost(newPost: Omit<IPost, "_id">): Promise<any> {
       body: JSON.stringify(newPost),
     });
 
-    //TODO this is not enough!
     if (!response.ok) {
-      console.log(response.statusText);
+      throw new Error(`${response.status} (${response.status})`);
     } else {
       const responseJSON = await response.json();
       return responseJSON;
-      //console.log(responseJSON);
     }
   } catch (error) {
     if (error instanceof Error) {
-      console.error(error);
+      return { error: error.message };
     }
   }
 }
@@ -45,6 +43,8 @@ function addPostOptions(newPost: Omit<IPost, "_id">): MutatorOptions {
     },
     rollbackOnError: true,
     populateCache: (result, currentData) => {
+      if (result.error) return currentData;
+
       const postWithId = {
         ...newPost,
         _id: result.insertedId,
